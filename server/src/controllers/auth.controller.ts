@@ -67,5 +67,7 @@ export const authController = {
     }
 
     await service.logout(userId.toString(), res);
+
+    success(res, { message: "Logged out successfully" });
   }),
 };
