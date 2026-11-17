@@ -22,7 +22,43 @@ export const authMiddleware = (
   }
 
   try {
-    req.user = jwt.verify(token, ENV.JWT_ACCESS_SECRET as string) as Jwt_Payload;
+    req.user = jwt.verify(token, ENV.JWT_ACCESS_SECRET, {
+      algorithms: ["HS256"],
+    }) as Jwt_Payload;
+
+    next();
+  } catch (error) {
+    console.error("Authentication error:", error);
+    return next(unauthorized("Token expired or invalid"));
+  }
+};
+
+// For checking the refresh-token
+export const refreshTokenMiddleware = (
+  req: Request,
+  _: Response,
+  next: NextFunction,
+) => {
+  const token = req.cookies?.refreshToken;
+
+  if (typeof token !== "string" || !token) {
+    return next(unauthorized("Not authenticated."));
+  }
+
+  try {
+    const payload = jwt.verify(token, ENV.JWT_REFRESH_SECRET, {
+      algorithms: ["HS256"],
+    });
+
+    if (
+      typeof payload === "string" ||
+      typeof payload.id !== "number" ||
+      typeof payload.email !== "string"
+    ) {
+      return next(unauthorized("Invalid token."));
+    }
+
+    req.refreshPayload = { id: payload.id, email: payload.email };
     next();
   } catch (error) {
     console.error("Authentication error:", error);

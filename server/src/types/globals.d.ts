@@ -7,6 +7,7 @@ declare global {
     interface Request {
       cookies?: { [key: string]: string };
       user?: Pick<UserType, "id" | "email">;
+      refreshPayload?: Pick<UserType, "id" | "email">
     }
   }
 }

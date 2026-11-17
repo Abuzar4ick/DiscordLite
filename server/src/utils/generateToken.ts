@@ -32,3 +32,13 @@ export const generateToken = async (
 
   return accessToken;
 };
+
+export const generateNewAccessToken = (user: { id: number; email: string }) => {
+  const { id, email } = user;
+
+  const newAccessToken = jwt.sign({ id, email }, ENV.JWT_ACCESS_SECRET, {
+    expiresIn: "15m",
+  });
+
+  return newAccessToken;
+};
