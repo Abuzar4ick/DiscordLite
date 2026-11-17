@@ -1,0 +1,52 @@
+import type { Request, Response } from "express";
+import { serversService as service } from "../services/servers.service.js";
+import { IServer, CreateServer } from "../types/server.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import { success, badRequest } from "../utils/response.js";
+
+export const serversController = {
+  getServerById: asyncHandler(async (req: Request, res: Response) => {
+    const serverData = await service.getServerById(Number(req.params.id));
+    success(res, serverData);
+  }),
+
+  createNewserver: asyncHandler(async (req: Request, res: Response) => {
+    const data: CreateServer = req.body;
+    const userId: number = req.user?.id as number;
+
+    if (!data.name) throw badRequest("Server name is required");
+
+    const newServer: IServer = await service.createNewServer(data, userId);
+
+    success(res, newServer);
+  }),
+
+  updateServer: asyncHandler(async (req: Request, res: Response) => {
+    const serverId: number = req.params.id as unknown as number;
+    const { name, icon }: { name: string; icon: string } = req.body;
+    const userId: number = req.user?.id as number;
+
+    if (!name && !icon) {
+      throw badRequest(
+        "At least one field (name or icon) is required for update",
+      );
+    }
+
+    const updatedServer: IServer = await service.updateServer(
+      { name, icon },
+      serverId,
+      userId,
+    );
+
+    success(res, updatedServer);
+  }),
+
+  deleteServer: asyncHandler(async (req: Request, res: Response) => {
+    const serverId: number = req.params.id as unknown as number;
+    const userId: number = req.user?.id as number;
+
+    await service.deleteServer(serverId, userId);
+
+    success(res, { message: "Server deleted successfully" });
+  }),
+};
