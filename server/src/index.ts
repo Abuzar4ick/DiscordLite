@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 import routes from "./routes/index.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
@@ -15,6 +16,8 @@ connectRedis();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
 app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }));
 
 app.use("/api", routes);

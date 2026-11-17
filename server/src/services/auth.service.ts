@@ -1,6 +1,9 @@
 import type { Response } from "express";
 import { authRepository as repository } from "../repositories/auth.repository.js";
-import { generateToken } from "../utils/generateToken.js";
+import {
+  generateNewAccessToken,
+  generateToken,
+} from "../utils/generateToken.js";
 import {
   notFound,
   badRequest,
@@ -20,9 +23,7 @@ export const authService = {
       throw conflict("User already exists");
     }
 
-    const isUsernameTaken = await repository.findUserByUsername(
-      data.username,
-    );
+    const isUsernameTaken = await repository.findUserByUsername(data.username);
     if (isUsernameTaken) {
       throw conflict("Username already taken");
     }
@@ -38,7 +39,10 @@ export const authService = {
     return { message: "Verification email sent" };
   },
 
-  async verifyEmail(res: Response, token: string): Promise<{ accessToken: string }> {
+  async verifyEmail(
+    res: Response,
+    token: string,
+  ): Promise<{ accessToken: string }> {
     const email = await repository.consumeEmailVerificationToken(token);
     if (!email) {
       throw unauthorized("Invalid or expired verification token.");
@@ -60,7 +64,11 @@ export const authService = {
     return { accessToken };
   },
 
-  async login(email: string, password: string, res: Response): Promise<{ accessToken: string }> {
+  async login(
+    email: string,
+    password: string,
+    res: Response,
+  ): Promise<{ accessToken: string }> {
     const user = await repository.findUserByEmail(email);
     if (!user) {
       throw notFound("User not found");
@@ -76,11 +84,14 @@ export const authService = {
   },
 
   async refreshToken(refreshToken: string) {
-    let payload: { id?: string };
+    let payload: { id: number; email: string };
 
     try {
-      payload = jwt.verify(refreshToken, ENV.JWT_REFRESH_SECRET as string) as {
-        id?: string;
+      payload = jwt.verify(refreshToken, ENV.JWT_REFRESH_SECRET as string, {
+        algorithms: ["HS256"],
+      }) as {
+        id: number;
+        email: string;
       };
     } catch (error) {
       throw unauthorized("Invalid refresh token.");
@@ -90,25 +101,19 @@ export const authService = {
       throw unauthorized("Invalid refresh token payload.");
     }
 
-    const stored = await repository.getRefreshToken(payload.id);
+    const stored = await repository.getRefreshToken(payload.id.toString());
     if (!stored || stored !== refreshToken) {
       throw unauthorized("Refresh token not found.");
     }
 
-    const existingUser = await repository.findUserById(payload.id);
+    const existingUser = await repository.findUserById(payload.id.toString());
     if (!existingUser) {
       throw unauthorized("User not found.");
     }
 
-    const newAccessToken = jwt.sign(
-      { id: payload.id },
-      ENV.JWT_ACCESS_SECRET!,
-      {
-        expiresIn: "15m",
-      },
-    );
+    const newAccessToken = generateNewAccessToken(payload);
 
-    return { newAccessToken }
+    return { newAccessToken };
   },
 
   async logout(userId: string, res: Response): Promise<void> {

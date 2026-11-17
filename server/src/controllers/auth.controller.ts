@@ -56,7 +56,7 @@ export const authController = {
       throw badRequest("Refresh token is required.");
     }
 
-    const result = await await service.refreshToken(refreshToken);
+    const result = await service.refreshToken(refreshToken);
     success(res, result);
   }),
 
