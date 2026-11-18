@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
-// layout
+// layouts
 import RootLayout from "./components/layouts/RootLayout";
+import AuthLayout from "./components/layouts/AuthLayout";
 // pages
 import Home from "./pages/Home";
 
@@ -15,6 +16,11 @@ const App = () => {
           element: <Home />
         }
       ]
+    },
+    {
+      path: "/auth",
+      element: <AuthLayout />,
+      children: [],
     }
   ]);
   return (
