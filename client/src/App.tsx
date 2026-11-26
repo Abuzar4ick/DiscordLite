@@ -4,11 +4,12 @@ import RootLayout from "./components/layouts/RootLayout";
 import AuthLayout from "./components/layouts/AuthLayout";
 // pages
 import Home from "./pages/Home";
+import Signup from "./pages/Signup";
 
 const App = () => {
   const routes = createBrowserRouter([
     {
-      path: "/",
+      path: "/main",
       element: <RootLayout />,
       children: [
         {
@@ -20,7 +21,12 @@ const App = () => {
     {
       path: "/auth",
       element: <AuthLayout />,
-      children: [],
+      children: [
+        {
+          path: "signup",
+          element: <Signup />
+        }
+      ],
     }
   ]);
   return (

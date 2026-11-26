@@ -1,7 +1,3 @@
-import dotenv from "dotenv";
-
-dotenv.config({ quiet: true });
-
 function required(key: string): string {
   const value = import.meta.env[key];
   if (!value) {
@@ -12,5 +8,5 @@ function required(key: string): string {
 }
 
 export const ENV = {
-  CLIENT_URL: required("CLIENT_URL") + "/api",
+  CLIENT_URL: `${required("VITE_CLIENT_URL")}` + "/api",
 };
