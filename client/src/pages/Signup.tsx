@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 
@@ -7,6 +7,8 @@ interface FieldErrors {
   username?: string;
   password?: string;
 }
+
+const VALIDATION_ERROR_TIMEOUT_MS = 10_000;
 
 const Signup = () => {
   const {
@@ -24,9 +26,18 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const validationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearValidationTimer = () => {
+    if (validationTimerRef.current) {
+      clearTimeout(validationTimerRef.current);
+      validationTimerRef.current = null;
+    }
+  };
 
   useEffect(() => {
     return () => {
+      clearValidationTimer();
       resetSignupState();
     };
   }, [resetSignupState]);
@@ -70,10 +81,16 @@ const Signup = () => {
 
     const errors = validate();
     if (Object.keys(errors).length > 0) {
+      clearValidationTimer();
       setFieldErrors(errors);
+      validationTimerRef.current = setTimeout(() => {
+        setFieldErrors({});
+        validationTimerRef.current = null;
+      }, VALIDATION_ERROR_TIMEOUT_MS);
       return;
     }
 
+    clearValidationTimer();
     setFieldErrors({});
     await signup({
       email: email.trim(),
@@ -83,6 +100,8 @@ const Signup = () => {
   };
 
   const handleUseDifferentEmail = () => {
+    clearValidationTimer();
+    setFieldErrors({});
     resetSignupState();
     setPassword("");
   };
@@ -94,7 +113,7 @@ const Signup = () => {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(88,101,242,0.38),transparent_45%),radial-gradient(circle_at_80%_80%,rgba(71,82,196,0.32),transparent_45%)]"
       />
 
-      <div className="card relative z-10 w-full max-w-120 border border-[#1e1f22] bg-[#313338] text-[#f2f3f5] shadow-2xl">
+      <div className="card relative z-10 w-full max-w-[480px] border border-[#1e1f22] bg-[#313338] text-[#f2f3f5] shadow-2xl">
         <div className="card-body gap-5 p-6 sm:p-8">
           <div className="flex flex-col items-center text-center">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5865f2] text-white shadow-md">
@@ -154,36 +173,11 @@ const Signup = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
-              {error && (
-                <div role="alert" className="alert alert-error text-sm">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <span>{error}</span>
-                </div>
-              )}
-
               <fieldset className="fieldset">
                 <legend className="fieldset-legend w-full text-xs font-bold tracking-wide uppercase text-[#b5bac1]">
                   <span>
                     Email <span className="text-error">*</span>
                   </span>
-                  {fieldErrors.email && (
-                    <span className="text-xs font-medium normal-case text-error">
-                      {fieldErrors.email}
-                    </span>
-                  )}
                 </legend>
                 <input
                   id="email"
@@ -198,6 +192,11 @@ const Signup = () => {
                     fieldErrors.email ? "input-error outline-1 outline-error" : ""
                   }`}
                 />
+                {fieldErrors.email && (
+                  <p className="fieldset-label text-xs font-medium text-error">
+                    {fieldErrors.email}
+                  </p>
+                )}
               </fieldset>
 
               <fieldset className="fieldset">
@@ -205,11 +204,6 @@ const Signup = () => {
                   <span>
                     Username <span className="text-error">*</span>
                   </span>
-                  {fieldErrors.username && (
-                    <span className="text-xs font-medium normal-case text-error">
-                      {fieldErrors.username}
-                    </span>
-                  )}
                 </legend>
                 <input
                   id="username"
@@ -224,6 +218,11 @@ const Signup = () => {
                     fieldErrors.username ? "input-error outline-1 outline-error" : ""
                   }`}
                 />
+                {fieldErrors.username && (
+                  <p className="fieldset-label text-xs font-medium text-error">
+                    {fieldErrors.username}
+                  </p>
+                )}
               </fieldset>
 
               <fieldset className="fieldset">
@@ -231,11 +230,6 @@ const Signup = () => {
                   <span>
                     Password <span className="text-error">*</span>
                   </span>
-                  {fieldErrors.password && (
-                    <span className="text-xs font-medium normal-case text-error">
-                      {fieldErrors.password}
-                    </span>
-                  )}
                 </legend>
                 <label
                   className={`input w-full border-none bg-[#1e1f22] text-[#f2f3f5] focus-within:outline-2 focus-within:outline-[#5865f2] ${
@@ -262,6 +256,11 @@ const Signup = () => {
                     {showPassword ? "Hide" : "Show"}
                   </button>
                 </label>
+                {fieldErrors.password && (
+                  <p className="fieldset-label text-xs font-medium text-error">
+                    {fieldErrors.password}
+                  </p>
+                )}
               </fieldset>
 
               <button

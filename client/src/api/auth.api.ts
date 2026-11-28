@@ -7,7 +7,7 @@ export interface SignupPayload {
 }
 
 export interface SignupResponseData {
-  message: string;
+  message: string; 
 }
 
 interface ApiSuccessResponse<T> {

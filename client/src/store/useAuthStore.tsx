@@ -1,4 +1,5 @@
 import axios from "axios";
+import toast from "react-hot-toast";
 import { create } from "zustand";
 import { signupApi, type SignupPayload } from "../api/auth.api";
 
@@ -48,6 +49,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     try {
       const data = await signupApi(payload);
+      toast.success(data.message);
       set({
         isSigningUp: false,
         signupSuccessMessage: data.message,
@@ -55,9 +57,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
       return true;
     } catch (err) {
+      const errorMessage = extractErrorMessage(err);
+      toast.error(errorMessage);
       set({
         isSigningUp: false,
-        error: extractErrorMessage(err),
+        error: errorMessage,
       });
       return false;
     }
